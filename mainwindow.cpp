@@ -6,11 +6,15 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QDate>
+#include <QtCharts>
+#include <QDialog>
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , model(nullptr)
+    , chartView(nullptr)
 {
     ui->setupUi(this);
 
@@ -31,8 +35,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     qDebug() << "Application initialisée - Onglet Ajouter affiché par défaut";
 }
+
 MainWindow::~MainWindow()
 {
+    delete chartView;
     delete ui;
 }
 
@@ -503,7 +509,6 @@ void MainWindow::showEventDetails(int id)
     }
 }
 
-// Ajoutez cette méthode
 void MainWindow::setupStatistiquesUI()
 {
     // Initialiser le tableau des types
@@ -528,9 +533,67 @@ void MainWindow::setupStatistiquesUI()
 
     ui->tableWidget_types->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget_types->resizeColumnsToContents();
+
+    // Configurer le graphique circulaire une seule fois
+    //setupPieChart();
+
+    // Calculer les statistiques initiales
+    calculerStatistiques();
 }
 
-// Méthode pour calculer les statistiques
+
+void MainWindow::updatePieChart()
+{
+    if (!chartView) return;
+
+    QChart *chart = chartView->chart();
+
+    // Supprimer l'ancienne série si elle existe
+    QList<QAbstractSeries*> seriesList = chart->series();
+    if (!seriesList.isEmpty()) {
+        chart->removeSeries(seriesList.first());
+    }
+
+    // Créer une nouvelle série avec les données actuelles
+    QPieSeries *pieSeries = new QPieSeries();
+
+    // Récupérer les données depuis la base de données
+    QSqlQuery query;
+    QStringList types = {"Romantique", "Élégant", "Festif", "Soft/Doux", "Formel", "Informel"};
+
+    for (const QString &type : types) {
+        query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE TYPE = :type");
+        query.bindValue(":type", type);
+
+        int count = 0;
+        if (query.exec() && query.next()) {
+            count = query.value(0).toInt();
+        }
+
+        if (count > 0) {
+            QPieSlice *slice = pieSeries->append(type, count);
+            slice->setLabelVisible(true);
+            slice->setLabel(QString("%1: %2 événements").arg(type).arg(count));
+
+            // Personnaliser les couleurs pour correspondre au thème rose
+            static int colorIndex = 0;
+            QColor colors[] = {
+                QColor("#ffb6c1"), // Rose clair
+                QColor("#ff91a4"), // Rose moyen
+                QColor("#ff6b8b"), // Rose foncé
+                QColor("#ffd1dc"), // Rose pastel
+                QColor("#f4c2c2"), // Rose saumon
+                QColor("#f8c8dc")  // Rose poudré
+            };
+            slice->setColor(colors[colorIndex % 6]);
+            colorIndex++;
+        }
+    }
+
+    // Ajouter la nouvelle série au chart
+    chart->addSeries(pieSeries);
+}
+
 void MainWindow::calculerStatistiques()
 {
     QSqlQuery query;
@@ -562,7 +625,7 @@ void MainWindow::calculerStatistiques()
     ui->label_mois->setText(QString("- Ce mois: %1").arg(ceMois));
     ui->label_annee->setText(QString("- Cette année: %1").arg(cetteAnnee));
 
-    // Statistiques par type
+    // Statistiques par type pour le tableau
     QStringList types = {"Romantique", "Élégant", "Festif", "Soft/Doux"};
 
     for (int i = 0; i < types.size(); ++i) {
@@ -578,6 +641,118 @@ void MainWindow::calculerStatistiques()
         QTableWidgetItem *countItem = new QTableWidgetItem(QString::number(count));
         ui->tableWidget_types->setItem(i, 1, countItem);
     }
+
+    // Mettre à jour le graphique circulaire (sans le recréer)
+    updatePieChart();
+
+    qDebug() << "Statistiques mises à jour - Total:" << total;
+}
+
+// Slot pour le bouton statButton
+void MainWindow::on_statButton_clicked()
+{
+    // Afficher le graphique circulaire dans une fenêtre modale
+    QDialog *chartDialog = new QDialog(this);
+    chartDialog->setWindowTitle("Graphique des Événements par Type");
+    chartDialog->setMinimumSize(600, 500);
+    chartDialog->setStyleSheet("background-color: #fff0f5;");
+
+    QVBoxLayout *layout = new QVBoxLayout(chartDialog);
+
+    // Créer le graphique circulaire
+    QPieSeries *pieSeries = new QPieSeries();
+
+    // Récupérer les données depuis la base de données
+    QSqlQuery query;
+    QStringList types = {"Romantique", "Élégant", "Festif", "Soft/Doux", "Formel", "Informel"};
+
+    for (const QString &type : types) {
+        query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE TYPE = :type");
+        query.bindValue(":type", type);
+
+        int count = 0;
+        if (query.exec() && query.next()) {
+            count = query.value(0).toInt();
+        }
+
+        if (count > 0) {
+            QPieSlice *slice = pieSeries->append(type, count);
+            slice->setLabelVisible(true);
+            slice->setLabel(QString("%1: %2 événements\n(%3%)")
+                                .arg(type)
+                                .arg(count)
+                                .arg(QString::number(slice->percentage() * 100, 'f', 1)));
+
+            // Personnaliser les couleurs pour correspondre au thème rose
+            static int colorIndex = 0;
+            QColor colors[] = {
+                QColor("#ffb6c1"), // Rose clair
+                QColor("#ff91a4"), // Rose moyen
+                QColor("#ff6b8b"), // Rose foncé
+                QColor("#ffd1dc"), // Rose pastel
+                QColor("#f4c2c2"), // Rose saumon
+                QColor("#f8c8dc")  // Rose poudré
+            };
+            slice->setColor(colors[colorIndex % 6]);
+            colorIndex++;
+
+            // Effet hover sur les tranches
+            connect(slice, &QPieSlice::hovered, [slice](bool hovered) {
+                if (hovered) {
+                    slice->setExploded(true);
+                } else {
+                    slice->setExploded(false);
+                }
+            });
+        }
+    }
+
+    // Créer le chart
+    QChart *chart = new QChart();
+    chart->addSeries(pieSeries);
+    chart->setTitle("Répartition des Événements par Type");
+    chart->setTitleBrush(QBrush(QColor("#8b475d")));
+    chart->setAnimationOptions(QChart::AllAnimations);
+    chart->legend()->setVisible(true);
+    chart->legend()->setAlignment(Qt::AlignBottom);
+    chart->legend()->setLabelColor(QColor("#8b475d"));
+    chart->setBackgroundBrush(QBrush(QColor("#fff0f5")));
+
+    // Créer la vue du chart
+    QChartView *dialogChartView = new QChartView(chart);
+    dialogChartView->setRenderHint(QPainter::Antialiasing);
+    dialogChartView->setStyleSheet("background-color: #fff0f5; border: 2px solid #ffb6c1; border-radius: 10px;");
+
+    // Ajouter un bouton de fermeture
+    QPushButton *closeButton = new QPushButton("Fermer", this);
+    closeButton->setStyleSheet(
+        "QPushButton {"
+        "    background-color: #f4c2c2;"
+        "    color: white;"
+        "    font-weight: bold;"
+        "    border-radius: 5px;"
+        "    padding: 10px 20px;"
+        "    border: 2px solid #ff91a4;"
+        "}"
+        "QPushButton:hover {"
+        "    background-color: #ff91a4;"
+        "}"
+        "QPushButton:pressed {"
+        "    background-color: #ff6b8b;"
+        "}"
+        );
+
+    connect(closeButton, &QPushButton::clicked, chartDialog, &QDialog::accept);
+
+    // Ajouter les widgets au layout
+    layout->addWidget(dialogChartView);
+    layout->addWidget(closeButton, 0, Qt::AlignCenter);
+
+    // Afficher la fenêtre modale
+    chartDialog->exec();
+
+    // Nettoyer la mémoire
+    delete chartDialog;
 }
 
 // Slot pour détecter le changement d'onglet

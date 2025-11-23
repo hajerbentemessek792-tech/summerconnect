@@ -407,7 +407,10 @@ Makefile: ../../prjt.pro C:/qt2/6.7.3/mingw_64/mkspecs/win32-g++/qmake.conf C:/q
 		C:/qt2/6.7.3/mingw_64/mkspecs/features/yacc.prf \
 		C:/qt2/6.7.3/mingw_64/mkspecs/features/lex.prf \
 		../../prjt.pro \
+		C:/qt2/6.7.3/mingw_64/lib/Qt6Charts.prl \
+		C:/qt2/6.7.3/mingw_64/lib/Qt6OpenGLWidgets.prl \
 		C:/qt2/6.7.3/mingw_64/lib/Qt6Widgets.prl \
+		C:/qt2/6.7.3/mingw_64/lib/Qt6OpenGL.prl \
 		C:/qt2/6.7.3/mingw_64/lib/Qt6Gui.prl \
 		C:/qt2/6.7.3/mingw_64/lib/Qt6Sql.prl \
 		C:/qt2/6.7.3/mingw_64/lib/Qt6Core.prl \
@@ -751,7 +754,10 @@ C:/qt2/6.7.3/mingw_64/mkspecs/features/exceptions.prf:
 C:/qt2/6.7.3/mingw_64/mkspecs/features/yacc.prf:
 C:/qt2/6.7.3/mingw_64/mkspecs/features/lex.prf:
 ../../prjt.pro:
+C:/qt2/6.7.3/mingw_64/lib/Qt6Charts.prl:
+C:/qt2/6.7.3/mingw_64/lib/Qt6OpenGLWidgets.prl:
 C:/qt2/6.7.3/mingw_64/lib/Qt6Widgets.prl:
+C:/qt2/6.7.3/mingw_64/lib/Qt6OpenGL.prl:
 C:/qt2/6.7.3/mingw_64/lib/Qt6Gui.prl:
 C:/qt2/6.7.3/mingw_64/lib/Qt6Sql.prl:
 C:/qt2/6.7.3/mingw_64/lib/Qt6Core.prl:

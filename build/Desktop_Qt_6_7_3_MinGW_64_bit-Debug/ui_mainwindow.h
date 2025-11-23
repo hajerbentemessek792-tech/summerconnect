@@ -16,6 +16,7 @@
 #include <QtWidgets/QDateEdit>
 #include <QtWidgets/QDateTimeEdit>
 #include <QtWidgets/QGroupBox>
+#include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -119,13 +120,15 @@ public:
     QDateTimeEdit *planDate;
     QPushButton *pushButtonvalider_5;
     QWidget *tabstatistique;
+    QHBoxLayout *horizontalLayout;
     QGroupBox *groupBox;
     QLabel *label_total;
     QLabel *label_mois;
     QLabel *label_annee;
     QLabel *labeltype;
     QTableWidget *tableWidget_types;
-    QWidget *chartWidget;
+    QPushButton *statButton;
+    QCalendarWidget *calendarWidget_2;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -141,7 +144,7 @@ public:
         centralwidget->setObjectName("centralwidget");
         tabWidget = new QTabWidget(centralwidget);
         tabWidget->setObjectName("tabWidget");
-        tabWidget->setGeometry(QRect(70, 40, 821, 691));
+        tabWidget->setGeometry(QRect(70, 40, 871, 691));
         tabWidget->setStyleSheet(QString::fromUtf8("/* Th\303\250me Rose/Saumon cr\303\251atif pour l'interface d'\303\251v\303\251nements */\n"
 "\n"
 "/* Style g\303\251n\303\251ral de la fen\303\252tre */\n"
@@ -846,9 +849,10 @@ public:
         tabWidget->addTab(tabcalendrier, icon7, QString());
         tabstatistique = new QWidget();
         tabstatistique->setObjectName("tabstatistique");
+        horizontalLayout = new QHBoxLayout(tabstatistique);
+        horizontalLayout->setObjectName("horizontalLayout");
         groupBox = new QGroupBox(tabstatistique);
         groupBox->setObjectName("groupBox");
-        groupBox->setGeometry(QRect(20, 30, 411, 591));
         label_total = new QLabel(groupBox);
         label_total->setObjectName("label_total");
         label_total->setGeometry(QRect(10, 50, 211, 31));
@@ -860,7 +864,7 @@ public:
         label_annee->setGeometry(QRect(20, 170, 121, 31));
         labeltype = new QLabel(groupBox);
         labeltype->setObjectName("labeltype");
-        labeltype->setGeometry(QRect(10, 230, 171, 31));
+        labeltype->setGeometry(QRect(30, 330, 171, 31));
         tableWidget_types = new QTableWidget(groupBox);
         if (tableWidget_types->rowCount() < 4)
             tableWidget_types->setRowCount(4);
@@ -873,10 +877,23 @@ public:
         QTableWidgetItem *__qtablewidgetitem3 = new QTableWidgetItem();
         tableWidget_types->setVerticalHeaderItem(3, __qtablewidgetitem3);
         tableWidget_types->setObjectName("tableWidget_types");
-        tableWidget_types->setGeometry(QRect(20, 280, 381, 201));
-        chartWidget = new QWidget(tabstatistique);
-        chartWidget->setObjectName("chartWidget");
-        chartWidget->setGeometry(QRect(450, 70, 331, 421));
+        tableWidget_types->setGeometry(QRect(40, 380, 381, 201));
+        statButton = new QPushButton(groupBox);
+        statButton->setObjectName("statButton");
+        statButton->setGeometry(QRect(540, 380, 231, 201));
+        statButton->setStyleSheet(QString::fromUtf8("background-color: #f4c2c2;  /* Light pink */\n"
+"color: white;               /* White text */\n"
+"font-weight: bold;\n"
+"border-radius: 5px;\n"
+"padding: 5px 10px;\n"
+"\n"
+""));
+        calendarWidget_2 = new QCalendarWidget(groupBox);
+        calendarWidget_2->setObjectName("calendarWidget_2");
+        calendarWidget_2->setGeometry(QRect(320, 50, 331, 231));
+
+        horizontalLayout->addWidget(groupBox);
+
         QIcon icon8(QIcon::fromTheme(QIcon::ThemeIcon::FormatJustifyLeft));
         tabWidget->addTab(tabstatistique, icon8, QString());
         MainWindow->setCentralWidget(centralwidget);
@@ -1005,6 +1022,7 @@ public:
         ___qtablewidgetitem2->setText(QCoreApplication::translate("MainWindow", "Festif", nullptr));
         QTableWidgetItem *___qtablewidgetitem3 = tableWidget_types->verticalHeaderItem(3);
         ___qtablewidgetitem3->setText(QCoreApplication::translate("MainWindow", "Soft/Doux", nullptr));
+        statButton->setText(QCoreApplication::translate("MainWindow", "stats", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tabstatistique), QCoreApplication::translate("MainWindow", "Statistique", nullptr));
     } // retranslateUi
 

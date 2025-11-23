@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "qchartview.h"
 #include <QMainWindow>
 #include <QSqlTableModel>
 
@@ -40,9 +41,15 @@ private slots:
     void on_tabWidget_currentChanged(int index);
 
 
+    void on_statButton_clicked(); // Ajouter cette ligne
+
+
+
+
 private:
     Ui::MainWindow *ui;
     QSqlTableModel *model;
+    QChartView *chartView; // Ajouter cette ligne
 
     void setupDatabase();
     void populateComboBoxes();
@@ -54,6 +61,14 @@ private:
     void setupStatistiquesUI();
     void calculerStatistiques();
     void updateStatistiques();
+    void setupPieChart();
+    void updatePieChart(); // Nouvelle méthode
+    void showPieChart(); // Nouvelle méthode pour afficher le graphique
+
+
+
+
+
 };
 
 #endif // MAINWINDOW_H
