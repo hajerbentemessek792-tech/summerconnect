@@ -40,23 +40,20 @@ private slots:
 
     // Statistique
     void on_tabWidget_currentChanged(int index);
+    void on_statButton_clicked();
 
-
-    void on_statButton_clicked(); // Ajouter cette ligne
-
-
+    // Calendrier
     void on_calendarWidget_clicked(const QDate &date);
-    void on_listEventsToday_itemClicked(QListWidgetItem *item);  // CORRIGEZ CETTE LIGNE
-    void on_pushButtonPlanifier_clicked();
+    void on_listEventsToday_itemClicked(QListWidgetItem *item);
     void on_pushButtonEditEvent_clicked();
-
-
-
+    void on_calendarWidget_selectionChanged();
+    void on_calendarWidget_2_clicked(const QDate &date);
+    void on_calendarWidget_2_selectionChanged();
 
 private:
     Ui::MainWindow *ui;
     QSqlTableModel *model;
-    QChartView *chartView; // Ajouter cette ligne
+    QChartView *chartView;
 
     void setupDatabase();
     void populateComboBoxes();
@@ -65,26 +62,17 @@ private:
     bool eventExists(int id);
     void showEventDetails(int id);
 
-
     void loadEventsForDate(const QDate &date);
     bool checkEventConflict(const QDate &date, const QString &lieu);
     void populateCalendarEvents();
-
-
-
+    void updateCalendarDisplay(const QDate &date);
+    void calculerStatistiquesPourDate(const QDate &date); // UNE SEULE DÉCLARATION
 
     // Pour les statistiques
     void setupStatistiquesUI();
     void calculerStatistiques();
     void updateStatistiques();
-    void setupPieChart();
-    void updatePieChart(); // Nouvelle méthode
-    void showPieChart(); // Nouvelle méthode pour afficher le graphique
-
-
-
-
-
+    void updatePieChart();
 };
 
 #endif // MAINWINDOW_H

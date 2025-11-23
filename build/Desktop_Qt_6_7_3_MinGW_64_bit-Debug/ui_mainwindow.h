@@ -721,7 +721,7 @@ public:
         tabcalendrier->setObjectName("tabcalendrier");
         calendarWidget = new QCalendarWidget(tabcalendrier);
         calendarWidget->setObjectName("calendarWidget");
-        calendarWidget->setGeometry(QRect(10, 10, 341, 331));
+        calendarWidget->setGeometry(QRect(20, 50, 341, 411));
         listEventsToday = new QListWidget(tabcalendrier);
         listEventsToday->setObjectName("listEventsToday");
         listEventsToday->setGeometry(QRect(390, 30, 381, 291));
@@ -730,12 +730,12 @@ public:
         groupBoxEventDetails->setGeometry(QRect(380, 340, 421, 271));
         label_44 = new QLabel(groupBoxEventDetails);
         label_44->setObjectName("label_44");
-        label_44->setGeometry(QRect(10, 40, 61, 31));
+        label_44->setGeometry(QRect(10, 30, 61, 31));
         label_44->setFont(font1);
         label_44->setTextFormat(Qt::TextFormat::AutoText);
         eventDetailsNom = new QLineEdit(groupBoxEventDetails);
         eventDetailsNom->setObjectName("eventDetailsNom");
-        eventDetailsNom->setGeometry(QRect(60, 40, 341, 31));
+        eventDetailsNom->setGeometry(QRect(60, 30, 351, 41));
         label_45 = new QLabel(groupBoxEventDetails);
         label_45->setObjectName("label_45");
         label_45->setGeometry(QRect(10, 80, 61, 31));

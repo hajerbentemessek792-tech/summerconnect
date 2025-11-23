@@ -40,13 +40,20 @@ MainWindow::MainWindow(QWidget *parent)
     // Connexions des signaux
     connect(ui->calendarWidget, &QCalendarWidget::clicked,
             this, &MainWindow::on_calendarWidget_clicked);
+    connect(ui->calendarWidget, &QCalendarWidget::selectionChanged, // AJOUTEZ CETTE LIGNE
+            this, &MainWindow::on_calendarWidget_selectionChanged);
     connect(ui->listEventsToday, &QListWidget::itemClicked,
             this, &MainWindow::on_listEventsToday_itemClicked);
+    connect(ui->calendarWidget_2, &QCalendarWidget::clicked,
+            this, &MainWindow::on_calendarWidget_2_clicked);
+    connect(ui->calendarWidget_2, &QCalendarWidget::selectionChanged,
+            this, &MainWindow::on_calendarWidget_2_selectionChanged);
 
     // Configuration initiale
     ui->eventDetailsDate->setDate(QDate::currentDate());
 
-
+    // Afficher la date initiale
+    updateCalendarDisplay(QDate::currentDate());
 
     // Mêmes valeurs pour les détails
     ui->eventDetailsLieu->clear();
@@ -67,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Charger les événements actuels
     populateCalendarEvents();
-
+    calculerStatistiquesPourDate(QDate::currentDate());
     qDebug() << "Application initialisée - Onglet Ajouter affiché par défaut";
 }
 
@@ -677,7 +684,6 @@ void MainWindow::populateCalendarEvents()
         }
     }
 }
-
 void MainWindow::setupStatistiquesUI()
 {
     // Initialiser le tableau des types
@@ -703,13 +709,9 @@ void MainWindow::setupStatistiquesUI()
     ui->tableWidget_types->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget_types->resizeColumnsToContents();
 
-    // Configurer le graphique circulaire une seule fois
-    //setupPieChart();
-
-    // Calculer les statistiques initiales
-    calculerStatistiques();
+    // SUPPRIMEZ cet appel : calculerStatistiques();
+    // Les statistiques seront calculées par calculerStatistiquesPourDate()
 }
-
 
 void MainWindow::updatePieChart()
 {
@@ -939,4 +941,79 @@ void MainWindow::on_tabWidget_currentChanged(int index)
 void MainWindow::updateStatistiques()
 {
     calculerStatistiques();
+}
+void MainWindow::updateCalendarDisplay(const QDate &date)
+{
+    // Afficher le mois et l'année dans la barre de status
+    QString monthYear = date.toString("MMMM yyyy");
+    statusBar()->showMessage(QString("Calendrier: %1 - Événements du %2")
+                                 .arg(monthYear)
+                                 .arg(date.toString("dd/MM/yyyy")));
+
+    qDebug() << "Date sélectionnée:" << date.toString("dd/MM/yyyy");
+    qDebug() << "Mois et année:" << monthYear;
+
+    // Charger les événements pour cette date (SEULEMENT pour le calendrier principal)
+    loadEventsForDate(date);
+
+    // NE PAS appeler calculerStatistiquesPourDate ici !
+    // Les statistiques sont gérées par calendarWidget_2
+}
+void MainWindow::on_calendarWidget_selectionChanged()
+{
+    QDate selectedDate = ui->calendarWidget->selectedDate();
+    updateCalendarDisplay(selectedDate);
+}
+void MainWindow::calculerStatistiquesPourDate(const QDate &date)
+{
+    QSqlQuery query;
+
+    // Total des événements (reste le même)
+    int total = 0;
+    if (query.exec("SELECT COUNT(*) FROM EVENEMENTS")) {
+        if (query.next()) {
+            total = query.value(0).toInt();
+        }
+    }
+
+    // Événements du MOIS sélectionné
+    int ceMois = 0;
+    query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE EXTRACT(MONTH FROM DATE_EVENEMENT) = :month AND EXTRACT(YEAR FROM DATE_EVENEMENT) = :year");
+    query.bindValue(":month", date.month());
+    query.bindValue(":year", date.year());
+    if (query.exec() && query.next()) {
+        ceMois = query.value(0).toInt();
+    }
+
+    // Événements de l'ANNÉE sélectionnée
+    int cetteAnnee = 0;
+    query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE EXTRACT(YEAR FROM DATE_EVENEMENT) = :year");
+    query.bindValue(":year", date.year());
+    if (query.exec() && query.next()) {
+        cetteAnnee = query.value(0).toInt();
+    }
+
+    // Mettre à jour les labels
+    ui->label_total->setText(QString("Total événements: %1").arg(total));
+    ui->label_mois->setText(QString("- Ce mois: %1").arg(ceMois));
+    ui->label_annee->setText(QString("- Cette année: %1").arg(cetteAnnee));
+
+    qDebug() << "Statistiques pour" << date.toString("MMMM yyyy") << "- Mois:" << ceMois << "Année:" << cetteAnnee;
+}
+// ==================== CALENDRIER STATISTIQUES (calendarWidget_2) ====================
+
+void MainWindow::on_calendarWidget_2_clicked(const QDate &date)
+{
+    // Mettre à jour les statistiques pour la date sélectionnée
+    calculerStatistiquesPourDate(date);
+
+    // Afficher le mois/année dans la barre de status
+    QString monthYear = date.toString("MMMM yyyy");
+    statusBar()->showMessage(QString("Statistiques pour %1").arg(monthYear));
+}
+
+void MainWindow::on_calendarWidget_2_selectionChanged()
+{
+    QDate selectedDate = ui->calendarWidget_2->selectedDate();
+    calculerStatistiquesPourDate(selectedDate);
 }
