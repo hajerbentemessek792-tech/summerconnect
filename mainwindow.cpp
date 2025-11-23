@@ -6,6 +6,10 @@
 #include <QMessageBox>
 #include <QDebug>
 #include <QDate>
+#include <QPdfWriter>
+#include <QPainter>
+#include <QFileDialog>
+#include <QRandomGenerator>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -27,6 +31,53 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->tableView->setModel(model);
     ui->tableView->resizeColumnsToContents();
+    // === CONFIGURATION CALENDRIER ===
+    // Connexions des signaux
+    connect(ui->calendarWidget, &QCalendarWidget::clicked,
+            this, &MainWindow::on_calendarWidget_clicked);
+    connect(ui->listEventsToday, &QListWidget::itemClicked,
+            this, &MainWindow::on_listEventsToday_itemClicked);
+
+    // Configuration initiale
+    ui->planDate->setDate(QDate::currentDate());
+    ui->eventDetailsDate->setDate(QDate::currentDate());
+
+    // Peupler les combobox du calendrier
+    ui->planLieu->clear();
+    ui->planLieu->addItem("Salle des fêtes");
+    ui->planLieu->addItem("Jardin");
+    ui->planLieu->addItem("Plage");
+    ui->planLieu->addItem("Restaurant");
+    ui->planLieu->addItem("Hôtel");
+    ui->planLieu->addItem("Salle de conférence");
+
+    ui->planType->clear();
+    ui->planType->addItem("Romantique");
+    ui->planType->addItem("Élégant");
+    ui->planType->addItem("Festif");
+    ui->planType->addItem("Soft/Doux");
+    ui->planType->addItem("Formel");
+    ui->planType->addItem("Informel");
+
+    // Mêmes valeurs pour les détails
+    ui->eventDetailsLieu->clear();
+    ui->eventDetailsLieu->addItem("Salle des fêtes");
+    ui->eventDetailsLieu->addItem("Jardin");
+    ui->eventDetailsLieu->addItem("Plage");
+    ui->eventDetailsLieu->addItem("Restaurant");
+    ui->eventDetailsLieu->addItem("Hôtel");
+    ui->eventDetailsLieu->addItem("Salle de conférence");
+
+    ui->eventDetailsType->clear();
+    ui->eventDetailsType->addItem("Romantique");
+    ui->eventDetailsType->addItem("Élégant");
+    ui->eventDetailsType->addItem("Festif");
+    ui->eventDetailsType->addItem("Soft/Doux");
+    ui->eventDetailsType->addItem("Formel");
+    ui->eventDetailsType->addItem("Informel");
+
+    // Charger les événements actuels
+    populateCalendarEvents();
 
     qDebug() << "Application initialisée - Onglet Ajouter affiché par défaut";
 }
@@ -186,48 +237,139 @@ void MainWindow::clearAjouterFields()
 
 void MainWindow::on_pushButtonafficher_clicked()
 {
+    QString searchText = ui->lineEditchercherid->text().trimmed();
+
     // Si le champ de recherche est vide, afficher tous les événements
-    if (ui->lineEditchercherid->text().isEmpty()) {
+    if (searchText.isEmpty()) {
         model->setFilter("");
         model->select();
+        ui->tableView->resizeColumnsToContents();
         QMessageBox::information(this, "Affichage", "Tous les événements sont affichés");
         return;
     }
 
-    // Recherche par ID
-    bool ok;
-    int id = ui->lineEditchercherid->text().toInt(&ok);
+    // Vérifier que le texte contient seulement des chiffres
+    bool isNumeric = true;
+    for (int i = 0; i < searchText.length(); ++i) {
+        if (!searchText[i].isDigit()) {
+            isNumeric = false;
+            break;
+        }
+    }
 
-    if (!ok) {
-        QMessageBox::warning(this, "ID invalide", "Veuillez saisir un ID valide (nombre entier)");
+    if (!isNumeric) {
+        QMessageBox::warning(this, "Recherche invalide",
+                             "Veuillez saisir uniquement des chiffres pour la recherche par ID");
         ui->lineEditchercherid->setFocus();
         ui->lineEditchercherid->selectAll();
         return;
     }
 
-    // Appliquer le filtre
-    model->setFilter(QString("ID_EVENEMENTS = %1").arg(id));
+    // Recherche par préfixe d'ID (commence par) - Syntaxe Oracle
+    QString filter = QString("TO_CHAR(ID_EVENEMENTS) LIKE '%1%'").arg(searchText + "%");
+    model->setFilter(filter);
 
-    if (!model->select()) {
-        QMessageBox::warning(this, "Recherche", "Aucun événement trouvé avec cet ID");
-        model->setFilter(""); // Réafficher tous les événements
-        model->select();
+    if (model->select()) {
+        ui->tableView->resizeColumnsToContents();
+        int rowCount = model->rowCount();
+
+        if (rowCount > 0) {
+            QMessageBox::information(this, "Recherche réussie",
+                                     QString("%1 événement(s) trouvé(s) commençant par '%2'")
+                                         .arg(rowCount)
+                                         .arg(searchText));
+        } else {
+            QMessageBox::information(this, "Aucun résultat",
+                                     QString("Aucun événement trouvé commençant par '%1'")
+                                         .arg(searchText));
+            // Réafficher tous les événements si aucun résultat
+            model->setFilter("");
+            model->select();
+            ui->tableView->resizeColumnsToContents();
+        }
     } else {
-        QMessageBox::information(this, "Recherche",
-                                 QString("%1 événement(s) trouvé(s)").arg(model->rowCount()));
+        QMessageBox::critical(this, "Erreur de recherche",
+                              "Erreur lors de la recherche: " + model->lastError().text());
     }
 }
 
 void MainWindow::on_lineEditchercherid_textChanged(const QString &arg1)
 {
     Q_UNUSED(arg1);
-    // Si le champ de recherche est vidé, réafficher tous les événements
-    if (ui->lineEditchercherid->text().isEmpty()) {
+
+    // Recherche en temps réel si le texte n'est pas vide
+    QString searchText = ui->lineEditchercherid->text().trimmed();
+
+    if (!searchText.isEmpty()) {
+        // Vérifier que le texte contient seulement des chiffres
+        bool isNumeric = true;
+        for (int i = 0; i < searchText.length(); ++i) {
+            if (!searchText[i].isDigit()) {
+                isNumeric = false;
+                break;
+            }
+        }
+
+        if (isNumeric) {
+            // Recherche par préfixe d'ID en temps réel - Syntaxe Oracle
+            QString filter = QString("TO_CHAR(ID_EVENEMENTS) LIKE '%1%'").arg(searchText + "%");
+            model->setFilter(filter);
+            model->select();
+            ui->tableView->resizeColumnsToContents();
+        }
+    } else {
+        // Si le champ est vide, réafficher tous les événements
         model->setFilter("");
         model->select();
+        ui->tableView->resizeColumnsToContents();
     }
 }
+// ==================== TRI DES ÉVÉNEMENTS ====================
 
+void MainWindow::on_pushButtontri_clicked()
+{
+    static int currentSortColumn = 0; // 0=ID, 1=Nom, 4=Type
+    static bool ascending = true;
+
+    QString columnName;
+    QString buttonText;
+
+    switch (currentSortColumn) {
+    case 0:
+        columnName = "ID";
+        model->setSort(0, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+        buttonText = ascending ? "Tri ID ▲" : "Tri ID ▼";
+        break;
+    case 1:
+        columnName = "Nom";
+        model->setSort(1, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+        buttonText = ascending ? "Tri Nom ▲" : "Tri Nom ▼";
+        break;
+    case 4:
+        columnName = "Type";
+        model->setSort(4, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+        buttonText = ascending ? "Tri Type ▲" : "Tri Type ▼";
+        break;
+    }
+
+    model->select();
+    ui->tableView->resizeColumnsToContents();
+
+    // Mettre à jour le texte du bouton
+    ui->pushButtontri->setText(buttonText);
+
+    QString sortOrder = ascending ? "croissant" : "décroissant";
+
+    // Message court ou optionnel - vous pouvez le supprimer si vous voulez
+    QMessageBox::information(this, "Tri effectué",
+                             QString("Tri par %1 (%2)").arg(columnName).arg(sortOrder));
+
+    // Passer à la colonne suivante pour le prochain clic
+    currentSortColumn = (currentSortColumn + 1) % 3;
+
+    // Réinitialiser l'ordre pour la nouvelle colonne
+    ascending = true;
+}
 // ==================== ONGLET MODIFIER ====================
 
 void MainWindow::on_pushButton_13_clicked()
@@ -498,3 +640,327 @@ void MainWindow::showEventDetails(int id)
         clearModifierFields();
     }
 }
+void MainWindow::on_pushButtonpdf_clicked()
+{
+    qDebug() << "PDF CLICKED";
+
+    // Choisir où enregistrer le PDF
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "Enregistrer le PDF",
+        "Evenements.pdf",
+        "Fichiers PDF (*.pdf)"
+        );
+
+    if (fileName.isEmpty())
+        return;
+
+    // Création du PDF
+    QPdfWriter pdf(fileName);
+    pdf.setPageSize(QPageSize(QPageSize::A4));
+    pdf.setPageMargins(QMargins(30, 30, 30, 30));
+    pdf.setResolution(150); // Augmenter la résolution pour une meilleure qualité
+
+    QPainter painter(&pdf);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    // Définir les polices
+    QFont titleFont("Arial", 16, QFont::Bold);
+    QFont headerFont("Arial", 10, QFont::Bold);
+    QFont dataFont("Arial", 9);
+
+    // Titre
+    painter.setFont(titleFont);
+    painter.drawText(pdf.width()/2 - 200, 50, "LISTE DES ÉVÉNEMENTS");
+
+    // Date de génération
+    painter.setFont(dataFont);
+    painter.drawText(pdf.width() - 300, 80,
+                     "Généré le: " + QDate::currentDate().toString("dd/MM/yyyy"));
+
+    int y = 120;
+    int lineHeight = 25;
+    int columnSpacing = 120;
+
+    // ---- EN-TÊTE DU TABLEAU ----
+    painter.setFont(headerFont);
+
+    // Dessiner le fond de l'en-tête
+    painter.setBrush(QBrush(QColor(200, 200, 200)));
+    painter.setPen(QPen(Qt::black, 1));
+    painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+    // Texte de l'en-tête
+    painter.setPen(QPen(Qt::black));
+    painter.drawText(40, y + 18, "ID");
+    painter.drawText(40 + columnSpacing, y + 18, "Nom");
+    painter.drawText(40 + columnSpacing * 2, y + 18, "Date");
+    painter.drawText(40 + columnSpacing * 3, y + 18, "Lieu");
+    painter.drawText(40 + columnSpacing * 4, y + 18, "Type");
+    painter.drawText(40 + columnSpacing * 5, y + 18, "Participants");
+    painter.drawText(40 + columnSpacing * 6, y + 18, "Budget");
+
+    y += lineHeight;
+
+    // ---- DONNÉES DES ÉVÉNEMENTS ----
+    painter.setFont(dataFont);
+
+    for (int i = 0; i < model->rowCount(); ++i) {
+        // Alterner les couleurs de fond pour une meilleure lisibilité
+        if (i % 2 == 0) {
+            painter.setBrush(QBrush(QColor(240, 240, 240)));
+        } else {
+            painter.setBrush(QBrush(Qt::white));
+        }
+
+        painter.setPen(QPen(Qt::black, 1));
+        painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+        // Dessiner les données
+        painter.setPen(QPen(Qt::black));
+        painter.drawText(40, y + 18, model->index(i, 0).data().toString());
+        painter.drawText(40 + columnSpacing, y + 18,
+                         model->index(i, 1).data().toString().left(20)); // Limiter la longueur du nom
+
+        // Formater la date
+        QDate date = model->index(i, 2).data().toDate();
+        painter.drawText(40 + columnSpacing * 2, y + 18,
+                         date.isValid() ? date.toString("dd/MM/yyyy") : "N/A");
+
+        painter.drawText(40 + columnSpacing * 3, y + 18,
+                         model->index(i, 3).data().toString().left(15)); // Limiter la longueur du lieu
+
+        painter.drawText(40 + columnSpacing * 4, y + 18,
+                         model->index(i, 4).data().toString());
+
+        painter.drawText(40 + columnSpacing * 5, y + 18,
+                         model->index(i, 5).data().toString());
+
+        // Formater le budget
+        double budget = model->index(i, 6).data().toDouble();
+        painter.drawText(40 + columnSpacing * 6, y + 18,
+                         QString::number(budget, 'f', 2) + " M");
+
+        y += lineHeight;
+
+        // Vérifier si on dépasse la page
+        if (y > pdf.height() - 50) {
+            pdf.newPage();
+            y = 50;
+
+            // Redessiner l'en-tête sur la nouvelle page
+            painter.setFont(headerFont);
+            painter.setBrush(QBrush(QColor(200, 200, 200)));
+            painter.setPen(QPen(Qt::black, 1));
+            painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+            painter.setPen(QPen(Qt::black));
+            painter.drawText(40, y + 18, "ID");
+            painter.drawText(40 + columnSpacing, y + 18, "Nom");
+            painter.drawText(40 + columnSpacing * 2, y + 18, "Date");
+            painter.drawText(40 + columnSpacing * 3, y + 18, "Lieu");
+            painter.drawText(40 + columnSpacing * 4, y + 18, "Type");
+            painter.drawText(40 + columnSpacing * 5, y + 18, "Participants");
+            painter.drawText(40 + columnSpacing * 6, y + 18, "Budget");
+
+            y += lineHeight;
+            painter.setFont(dataFont);
+        }
+    }
+
+    // Pied de page
+    painter.setFont(dataFont);
+    painter.drawText(30, pdf.height() - 20,
+                     QString("Total: %1 événement(s)").arg(model->rowCount()));
+
+    painter.end();
+
+    QMessageBox::information(this, "PDF généré",
+                             "Le PDF a été créé avec succès !\nFichier: " + fileName);
+}
+
+// ==================== FONCTIONS CALENDRIER ====================
+
+void MainWindow::on_calendarWidget_clicked(const QDate &date)
+{
+    loadEventsForDate(date);
+
+    // Mettre à jour le statut dans la barre de status
+    statusBar()->showMessage(QString("Événements du %1 - Cliquez sur un événement pour voir les détails")
+                                 .arg(date.toString("dd/MM/yyyy")));
+
+    // Mettre à jour la date dans le formulaire de planification
+    ui->planDate->setDate(date);
+}
+
+void MainWindow::loadEventsForDate(const QDate &date)
+{
+    ui->listEventsToday->clear();
+
+    QSqlQuery query;
+    query.prepare("SELECT ID_EVENEMENTS, NOM, TYPE, LIEU FROM EVENEMENTS WHERE DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD')");
+    query.bindValue(":date", date.toString("yyyy-MM-dd"));
+
+    if (query.exec()) {
+        while (query.next()) {
+            int id = query.value(0).toInt();
+            QString nom = query.value(1).toString();
+            QString type = query.value(2).toString();
+            QString lieu = query.value(3).toString();
+
+            QString itemText = QString("%1 - %2 (%3)").arg(nom).arg(lieu).arg(type);
+            QListWidgetItem *item = new QListWidgetItem(itemText, ui->listEventsToday);
+            item->setData(Qt::UserRole, id); // Stocker l'ID dans l'item
+        }
+    }
+
+    if (ui->listEventsToday->count() == 0) {
+        ui->listEventsToday->addItem("Aucun événement cette date");
+    }
+}
+
+void MainWindow::on_listEventsToday_itemClicked(QListWidgetItem *item)
+{
+    if (!item || item->text() == "Aucun événement cette date") {
+        return;
+    }
+
+    int eventId = item->data(Qt::UserRole).toInt();
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM EVENEMENTS WHERE ID_EVENEMENTS = :id");
+    query.bindValue(":id", eventId);
+
+    if (query.exec() && query.next()) {
+        ui->eventDetailsNom->setText(query.value("NOM").toString());
+        ui->eventDetailsDate->setDate(query.value("DATE_EVENEMENT").toDate());
+
+        // Type
+        QString type = query.value("TYPE").toString();
+        int typeIndex = ui->eventDetailsType->findText(type);
+        if (typeIndex >= 0) ui->eventDetailsType->setCurrentIndex(typeIndex);
+
+        // Lieu
+        QString lieu = query.value("LIEU").toString();
+        int lieuIndex = ui->eventDetailsLieu->findText(lieu);
+        if (lieuIndex >= 0) ui->eventDetailsLieu->setCurrentIndex(lieuIndex);
+    }
+}
+
+void MainWindow::on_pushButtonPlanifier_clicked()
+{
+    // Validation des champs
+    if (ui->planNom->text().isEmpty()) {
+        QMessageBox::warning(this, "Champ manquant", "Veuillez saisir le nom de l'événement");
+        ui->planNom->setFocus();
+        return;
+    }
+
+    // Vérifier les conflits
+    if (checkEventConflict(ui->planDate->date(), ui->planLieu->currentText())) {
+        QMessageBox::warning(this, "Conflit détecté",
+                             QString("Le lieu '%1' est déjà réservé pour cette date. Choisissez un autre lieu ou une autre date.")
+                                 .arg(ui->planLieu->currentText()));
+        return;
+    }
+
+    // Générer un ID unique
+    int newId = QRandomGenerator::global()->bounded(1000, 9999);
+    while (eventExists(newId)) {
+        newId = QRandomGenerator::global()->bounded(1000, 9999);
+    }
+
+    // Insérer dans la base
+    QSqlQuery query;
+    query.prepare("INSERT INTO EVENEMENTS (ID_EVENEMENTS, NOM, DATE_EVENEMENT, LIEU, TYPE, NB_PARTICIPANTS, BUDGET) "
+                  "VALUES (:id, :nom, TO_DATE(:date_evenement, 'YYYY-MM-DD'), :lieu, :type, :nb_participants, :budget)");
+
+    query.bindValue(":id", newId);
+    query.bindValue(":nom", ui->planNom->text());
+    query.bindValue(":date_evenement", ui->planDate->date().toString("yyyy-MM-dd"));
+    query.bindValue(":lieu", ui->planLieu->currentText());
+    query.bindValue(":type", ui->planType->currentText());
+    query.bindValue(":nb_participants", 0); // Valeur par défaut
+    query.bindValue(":budget", 0); // Valeur par défaut
+
+    if (query.exec()) {
+        QMessageBox::information(this, "Succès", "Événement planifié avec succès!");
+
+        // Recharger les données
+        loadEventsForDate(ui->planDate->date());
+        populateCalendarEvents();
+        model->select();
+
+        // Vider le formulaire
+        ui->planNom->clear();
+        ui->planNom->setFocus();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la planification: " + query.lastError().text());
+    }
+}
+
+void MainWindow::on_pushButtonEditEvent_clicked()
+{
+    if (ui->eventDetailsNom->text().isEmpty()) {
+        QMessageBox::warning(this, "Aucun événement", "Veuillez d'abord sélectionner un événement");
+        return;
+    }
+
+    // Récupérer l'ID de l'événement sélectionné
+    QListWidgetItem *currentItem = ui->listEventsToday->currentItem();
+    if (!currentItem || currentItem->text() == "Aucun événement cette date") {
+        return;
+    }
+
+    int eventId = currentItem->data(Qt::UserRole).toInt();
+
+    // Mise à jour dans la base
+    QSqlQuery query;
+    query.prepare("UPDATE EVENEMENTS SET NOM = :nom, DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD'), LIEU = :lieu, TYPE = :type WHERE ID_EVENEMENTS = :id");
+
+    query.bindValue(":id", eventId);
+    query.bindValue(":nom", ui->eventDetailsNom->text());
+    query.bindValue(":date", ui->eventDetailsDate->date().toString("yyyy-MM-dd"));
+    query.bindValue(":lieu", ui->eventDetailsLieu->currentText());
+    query.bindValue(":type", ui->eventDetailsType->currentText());
+
+    if (query.exec()) {
+        QMessageBox::information(this, "Succès", "Événement modifié avec succès!");
+
+        // Recharger les données
+        loadEventsForDate(ui->eventDetailsDate->date());
+        populateCalendarEvents();
+        model->select();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la modification: " + query.lastError().text());
+    }
+}
+
+bool MainWindow::checkEventConflict(const QDate &date, const QString &lieu)
+{
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD') AND LIEU = :lieu");
+    query.bindValue(":date", date.toString("yyyy-MM-dd"));
+    query.bindValue(":lieu", lieu);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    return false;
+}
+
+void MainWindow::populateCalendarEvents()
+{
+    // Cette fonction peut être étendue pour colorer les dates avec événements
+    QSqlQuery query;
+    query.prepare("SELECT DISTINCT DATE_EVENEMENT FROM EVENEMENTS");
+
+    if (query.exec()) {
+        while (query.next()) {
+            QDate eventDate = query.value(0).toDate();
+            // Ici vous pouvez ajouter un formatage spécial pour les dates avec événements
+            qDebug() << "Événement trouvé le:" << eventDate.toString("dd/MM/yyyy");
+        }
+    }
+}
+
