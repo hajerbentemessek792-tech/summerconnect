@@ -1738,7 +1738,7 @@ padding: 5px 10px;
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="tabstat">
+    <widget class="QWidget" name="tabstatistique">
      <attribute name="icon">
       <iconset theme="QIcon::ThemeIcon::FormatJustifyLeft"/>
      </attribute>
@@ -1757,12 +1757,12 @@ padding: 5px 10px;
       <property name="title">
        <string>STAT</string>
       </property>
-      <widget class="QLabel" name="labelTotalEventsTitle">
+      <widget class="QLabel" name="label_total">
        <property name="geometry">
         <rect>
-         <x>0</x>
+         <x>10</x>
          <y>50</y>
-         <width>161</width>
+         <width>211</width>
          <height>31</height>
         </rect>
        </property>
@@ -1770,7 +1770,7 @@ padding: 5px 10px;
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Total evenements:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
-      <widget class="QLabel" name="labelmois">
+      <widget class="QLabel" name="label_mois">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -1783,7 +1783,7 @@ padding: 5px 10px;
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#c55d85;&quot;&gt;Ce mois:&lt;/span&gt;&lt;span style=&quot; color:#c55d85;&quot;&gt;&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
-      <widget class="QLabel" name="labelannee">
+      <widget class="QLabel" name="label_annee">
        <property name="geometry">
         <rect>
          <x>20</x>
@@ -1799,9 +1799,9 @@ padding: 5px 10px;
       <widget class="QLabel" name="labeltype">
        <property name="geometry">
         <rect>
-         <x>0</x>
+         <x>10</x>
          <y>230</y>
-         <width>101</width>
+         <width>171</width>
          <height>31</height>
         </rect>
        </property>
@@ -1809,155 +1809,42 @@ padding: 5px 10px;
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Par type:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
-      <widget class="QLabel" name="labelromantique">
+      <widget class="QTableWidget" name="tableWidget_types">
        <property name="geometry">
         <rect>
          <x>20</x>
          <y>280</y>
-         <width>121</width>
-         <height>31</height>
+         <width>381</width>
+         <height>201</height>
         </rect>
        </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#c55d85;&quot;&gt;Romantique:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelelegant">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>340</y>
-         <width>91</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#c55d85;&quot;&gt;Élégant:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelfestif">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>410</y>
-         <width>71</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#c55d85;&quot;&gt;Festif:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelsoft">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>480</y>
-         <width>111</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; color:#c55d85;&quot;&gt;Soft/Doux:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labeltot">
-       <property name="geometry">
-        <rect>
-         <x>180</x>
-         <y>50</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labela">
-       <property name="geometry">
-        <rect>
-         <x>140</x>
-         <y>170</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelm">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>110</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labels">
-       <property name="geometry">
-        <rect>
-         <x>130</x>
-         <y>480</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelf">
-       <property name="geometry">
-        <rect>
-         <x>100</x>
-         <y>410</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labele">
-       <property name="geometry">
-        <rect>
-         <x>120</x>
-         <y>340</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="labelr">
-       <property name="geometry">
-        <rect>
-         <x>160</x>
-         <y>280</y>
-         <width>81</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0</string>
-       </property>
+       <row>
+        <property name="text">
+         <string>Romantique</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>Élégant</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>Festif</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>Soft/Doux</string>
+        </property>
+       </row>
       </widget>
      </widget>
      <widget class="QWidget" name="chartWidget" native="true">
       <property name="geometry">
        <rect>
         <x>450</x>
-        <y>100</y>
+        <y>70</y>
         <width>331</width>
         <height>421</height>
        </rect>

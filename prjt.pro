@@ -13,11 +13,13 @@ QT += core gui sql widgets
 
 SOURCES += \
     connection.cpp \
+    evenement.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     connection.h \
+    evenement.h \
     mainwindow.h
 
 FORMS += \
@@ -27,4 +29,3 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-

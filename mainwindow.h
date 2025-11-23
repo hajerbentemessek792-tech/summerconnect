@@ -3,9 +3,6 @@
 
 #include <QMainWindow>
 #include <QSqlTableModel>
-#include <QListWidgetItem>
-#include <QtCharts/QChartView>
-
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -38,13 +35,11 @@ private slots:
     // Supprimer
     void on_pushButtonsupprimer_clicked();
     void on_pushButtoannuler_clicked();
-    void on_pushButtonpdf_clicked();
-    void on_pushButtontri_clicked();
-    // Nouveaux slots pour le calendrier
-    void on_calendarWidget_clicked(const QDate &date);
-    void on_listEventsToday_itemClicked(QListWidgetItem *item);  // CORRIGEZ CETTE LIGNE
-    void on_pushButtonPlanifier_clicked();
-    void on_pushButtonEditEvent_clicked();
+
+    // Statistique
+    void on_tabWidget_currentChanged(int index);
+
+
 private:
     Ui::MainWindow *ui;
     QSqlTableModel *model;
@@ -55,11 +50,10 @@ private:
     void clearModifierFields();
     bool eventExists(int id);
     void showEventDetails(int id);
-    void loadEventsForDate(const QDate &date);
-    bool checkEventConflict(const QDate &date, const QString &lieu);
-    void populateCalendarEvents();
-
-
+    // Pour les statistiques
+    void setupStatistiquesUI();
+    void calculerStatistiques();
+    void updateStatistiques();
 };
 
 #endif // MAINWINDOW_H
