@@ -33,6 +33,41 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableView->setModel(model);
     ui->tableView->resizeColumnsToContents();
 
+
+
+
+    // === CONFIGURATION CALENDRIER ===
+    // Connexions des signaux
+    connect(ui->calendarWidget, &QCalendarWidget::clicked,
+            this, &MainWindow::on_calendarWidget_clicked);
+    connect(ui->listEventsToday, &QListWidget::itemClicked,
+            this, &MainWindow::on_listEventsToday_itemClicked);
+
+    // Configuration initiale
+    ui->eventDetailsDate->setDate(QDate::currentDate());
+
+
+
+    // Mêmes valeurs pour les détails
+    ui->eventDetailsLieu->clear();
+    ui->eventDetailsLieu->addItem("Salle des fêtes");
+    ui->eventDetailsLieu->addItem("Jardin");
+    ui->eventDetailsLieu->addItem("Plage");
+    ui->eventDetailsLieu->addItem("Restaurant");
+    ui->eventDetailsLieu->addItem("Hôtel");
+    ui->eventDetailsLieu->addItem("Salle de conférence");
+
+    ui->eventDetailsType->clear();
+    ui->eventDetailsType->addItem("Romantique");
+    ui->eventDetailsType->addItem("Élégant");
+    ui->eventDetailsType->addItem("Festif");
+    ui->eventDetailsType->addItem("Soft/Doux");
+    ui->eventDetailsType->addItem("Formel");
+    ui->eventDetailsType->addItem("Informel");
+
+    // Charger les événements actuels
+    populateCalendarEvents();
+
     qDebug() << "Application initialisée - Onglet Ajouter affiché par défaut";
 }
 
@@ -506,6 +541,140 @@ void MainWindow::showEventDetails(int id)
         QMessageBox::warning(this, "Événement introuvable",
                              "Aucun événement trouvé avec cet ID");
         clearModifierFields();
+    }
+}
+
+
+// ==================== FONCTIONS CALENDRIER ====================
+
+void MainWindow::on_calendarWidget_clicked(const QDate &date)
+{
+    loadEventsForDate(date);
+
+    // Mettre à jour le statut dans la barre de status
+    statusBar()->showMessage(QString("Événements du %1 - Cliquez sur un événement pour voir les détails")
+                                 .arg(date.toString("dd/MM/yyyy")));
+
+    // Mettre à jour la date dans le formulaire de planification
+}
+
+void MainWindow::loadEventsForDate(const QDate &date)
+{
+    ui->listEventsToday->clear();
+
+    QSqlQuery query;
+    query.prepare("SELECT ID_EVENEMENTS, NOM, TYPE, LIEU FROM EVENEMENTS WHERE DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD')");
+    query.bindValue(":date", date.toString("yyyy-MM-dd"));
+
+    if (query.exec()) {
+        while (query.next()) {
+            int id = query.value(0).toInt();
+            QString nom = query.value(1).toString();
+            QString type = query.value(2).toString();
+            QString lieu = query.value(3).toString();
+
+            QString itemText = QString("%1 - %2 (%3)").arg(nom).arg(lieu).arg(type);
+            QListWidgetItem *item = new QListWidgetItem(itemText, ui->listEventsToday);
+            item->setData(Qt::UserRole, id); // Stocker l'ID dans l'item
+        }
+    }
+
+    if (ui->listEventsToday->count() == 0) {
+        ui->listEventsToday->addItem("Aucun événement cette date");
+    }
+}
+
+void MainWindow::on_listEventsToday_itemClicked(QListWidgetItem *item)
+{
+    if (!item || item->text() == "Aucun événement cette date") {
+        return;
+    }
+
+    int eventId = item->data(Qt::UserRole).toInt();
+
+    QSqlQuery query;
+    query.prepare("SELECT * FROM EVENEMENTS WHERE ID_EVENEMENTS = :id");
+    query.bindValue(":id", eventId);
+
+    if (query.exec() && query.next()) {
+        ui->eventDetailsNom->setText(query.value("NOM").toString());
+        ui->eventDetailsDate->setDate(query.value("DATE_EVENEMENT").toDate());
+
+        // Type
+        QString type = query.value("TYPE").toString();
+        int typeIndex = ui->eventDetailsType->findText(type);
+        if (typeIndex >= 0) ui->eventDetailsType->setCurrentIndex(typeIndex);
+
+        // Lieu
+        QString lieu = query.value("LIEU").toString();
+        int lieuIndex = ui->eventDetailsLieu->findText(lieu);
+        if (lieuIndex >= 0) ui->eventDetailsLieu->setCurrentIndex(lieuIndex);
+    }
+}
+
+
+void MainWindow::on_pushButtonEditEvent_clicked()
+{
+    if (ui->eventDetailsNom->text().isEmpty()) {
+        QMessageBox::warning(this, "Aucun événement", "Veuillez d'abord sélectionner un événement");
+        return;
+    }
+
+    // Récupérer l'ID de l'événement sélectionné
+    QListWidgetItem *currentItem = ui->listEventsToday->currentItem();
+    if (!currentItem || currentItem->text() == "Aucun événement cette date") {
+        return;
+    }
+
+    int eventId = currentItem->data(Qt::UserRole).toInt();
+
+    // Mise à jour dans la base
+    QSqlQuery query;
+    query.prepare("UPDATE EVENEMENTS SET NOM = :nom, DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD'), LIEU = :lieu, TYPE = :type WHERE ID_EVENEMENTS = :id");
+
+    query.bindValue(":id", eventId);
+    query.bindValue(":nom", ui->eventDetailsNom->text());
+    query.bindValue(":date", ui->eventDetailsDate->date().toString("yyyy-MM-dd"));
+    query.bindValue(":lieu", ui->eventDetailsLieu->currentText());
+    query.bindValue(":type", ui->eventDetailsType->currentText());
+
+    if (query.exec()) {
+        QMessageBox::information(this, "Succès", "Événement modifié avec succès!");
+
+        // Recharger les données
+        loadEventsForDate(ui->eventDetailsDate->date());
+        populateCalendarEvents();
+        model->select();
+    } else {
+        QMessageBox::critical(this, "Erreur", "Erreur lors de la modification: " + query.lastError().text());
+    }
+}
+
+bool MainWindow::checkEventConflict(const QDate &date, const QString &lieu)
+{
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM EVENEMENTS WHERE DATE_EVENEMENT = TO_DATE(:date, 'YYYY-MM-DD') AND LIEU = :lieu");
+    query.bindValue(":date", date.toString("yyyy-MM-dd"));
+    query.bindValue(":lieu", lieu);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    return false;
+}
+
+void MainWindow::populateCalendarEvents()
+{
+    // Cette fonction peut être étendue pour colorer les dates avec événements
+    QSqlQuery query;
+    query.prepare("SELECT DISTINCT DATE_EVENEMENT FROM EVENEMENTS");
+
+    if (query.exec()) {
+        while (query.next()) {
+            QDate eventDate = query.value(0).toDate();
+            // Ici vous pouvez ajouter un formatage spécial pour les dates avec événements
+            qDebug() << "Événement trouvé le:" << eventDate.toString("dd/MM/yyyy");
+        }
     }
 }
 

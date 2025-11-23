@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "qchartview.h"
+#include "qlistwidget.h"
 #include <QMainWindow>
 #include <QSqlTableModel>
 
@@ -44,6 +45,12 @@ private slots:
     void on_statButton_clicked(); // Ajouter cette ligne
 
 
+    void on_calendarWidget_clicked(const QDate &date);
+    void on_listEventsToday_itemClicked(QListWidgetItem *item);  // CORRIGEZ CETTE LIGNE
+    void on_pushButtonPlanifier_clicked();
+    void on_pushButtonEditEvent_clicked();
+
+
 
 
 private:
@@ -57,6 +64,15 @@ private:
     void clearModifierFields();
     bool eventExists(int id);
     void showEventDetails(int id);
+
+
+    void loadEventsForDate(const QDate &date);
+    bool checkEventConflict(const QDate &date, const QString &lieu);
+    void populateCalendarEvents();
+
+
+
+
     // Pour les statistiques
     void setupStatistiquesUI();
     void calculerStatistiques();
