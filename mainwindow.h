@@ -67,6 +67,7 @@ private:
     void populateCalendarEvents();
     void updateCalendarDisplay(const QDate &date);
     void calculerStatistiquesPourDate(const QDate &date); // UNE SEULE DÉCLARATION
+    void afficherConseilsSaisonniers(const QDate &date);
 
     // Pour les statistiques
     void setupStatistiquesUI();

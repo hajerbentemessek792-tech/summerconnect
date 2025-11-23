@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Charger les événements actuels
     populateCalendarEvents();
+    afficherConseilsSaisonniers(QDate::currentDate());
     calculerStatistiquesPourDate(QDate::currentDate());
     qDebug() << "Application initialisée - Onglet Ajouter affiché par défaut";
 }
@@ -1016,4 +1017,31 @@ void MainWindow::on_calendarWidget_2_selectionChanged()
 {
     QDate selectedDate = ui->calendarWidget_2->selectedDate();
     calculerStatistiquesPourDate(selectedDate);
+}
+void MainWindow::afficherConseilsSaisonniers(const QDate &date)
+{
+    int mois = date.month();
+
+    QString saison, message;
+
+    // Détection de la saison selon la date sélectionnée
+    if (mois >= 3 && mois <= 5) {
+        saison = "🌸 PRINTEMPS";
+        message = "• Période : Mars à Mai\n• Lieux : Jardin, Salle des fêtes\n• Types : Romantique, Élégant";
+    } else if (mois >= 6 && mois <= 8) {
+        saison = "🌞 ÉTÉ";
+        message = "• Période : Juin à Août\n• Lieux : Plage, Jardin\n• Types : Festif, Romantique";
+    } else if (mois >= 9 && mois <= 11) {
+        saison = "🍂 AUTOMNE";
+        message = "• Période : Septembre à Novembre\n• Lieux : Salle des fêtes, Restaurant\n• Types : Élégant, Formel";
+    } else {
+        saison = "❄️ HIVER";
+        message = "• Période : Décembre à Février\n• Lieux : Hôtel, Salle de conférence\n• Types : Festif, Élégant";
+    }
+
+    // Mettre à jour les 2 labels dans l'onglet Calendrier
+    ui->labelAlerteSaison->setText(saison);
+    ui->labelMessageSaison->setText(message);
+
+    qDebug() << "Conseils saisonniers pour" << date.toString("MMMM yyyy") << ":" << saison;
 }

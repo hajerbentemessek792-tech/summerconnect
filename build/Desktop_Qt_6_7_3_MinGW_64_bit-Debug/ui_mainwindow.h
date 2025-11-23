@@ -97,7 +97,6 @@ public:
     QPushButton *pushButtoannuler;
     QWidget *tabcalendrier;
     QCalendarWidget *calendarWidget;
-    QListWidget *listEventsToday;
     QGroupBox *groupBoxEventDetails;
     QLabel *label_44;
     QLineEdit *eventDetailsNom;
@@ -108,6 +107,9 @@ public:
     QComboBox *eventDetailsLieu;
     QComboBox *eventDetailsType;
     QPushButton *pushButtonEditEvent;
+    QLabel *labelAlerteSaison;
+    QLabel *labelMessageSaison;
+    QListWidget *listEventsToday;
     QWidget *tabstatistique;
     QHBoxLayout *horizontalLayout;
     QGroupBox *groupBox;
@@ -118,6 +120,7 @@ public:
     QTableWidget *tableWidget_types;
     QPushButton *statButton;
     QCalendarWidget *calendarWidget_2;
+    QLabel *labeltype_2;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -133,7 +136,7 @@ public:
         centralwidget->setObjectName("centralwidget");
         tabWidget = new QTabWidget(centralwidget);
         tabWidget->setObjectName("tabWidget");
-        tabWidget->setGeometry(QRect(70, 40, 871, 691));
+        tabWidget->setGeometry(QRect(100, 0, 871, 691));
         tabWidget->setStyleSheet(QString::fromUtf8("/* Th\303\250me Rose/Saumon cr\303\251atif pour l'interface d'\303\251v\303\251nements */\n"
 "\n"
 "/* Style g\303\251n\303\251ral de la fen\303\252tre */\n"
@@ -721,13 +724,10 @@ public:
         tabcalendrier->setObjectName("tabcalendrier");
         calendarWidget = new QCalendarWidget(tabcalendrier);
         calendarWidget->setObjectName("calendarWidget");
-        calendarWidget->setGeometry(QRect(20, 50, 341, 411));
-        listEventsToday = new QListWidget(tabcalendrier);
-        listEventsToday->setObjectName("listEventsToday");
-        listEventsToday->setGeometry(QRect(390, 30, 381, 291));
+        calendarWidget->setGeometry(QRect(20, 20, 381, 281));
         groupBoxEventDetails = new QGroupBox(tabcalendrier);
         groupBoxEventDetails->setObjectName("groupBoxEventDetails");
-        groupBoxEventDetails->setGeometry(QRect(380, 340, 421, 271));
+        groupBoxEventDetails->setGeometry(QRect(420, 310, 421, 301));
         label_44 = new QLabel(groupBoxEventDetails);
         label_44->setObjectName("label_44");
         label_44->setGeometry(QRect(10, 30, 61, 31));
@@ -782,6 +782,31 @@ public:
 "padding: 5px 10px;\n"
 "\n"
 ""));
+        labelAlerteSaison = new QLabel(tabcalendrier);
+        labelAlerteSaison->setObjectName("labelAlerteSaison");
+        labelAlerteSaison->setGeometry(QRect(40, 380, 181, 41));
+        labelAlerteSaison->setStyleSheet(QString::fromUtf8("QLabel {\n"
+"    background-color: #ffe4e9;\n"
+"    border: 2px solid #ff91a4;\n"
+"    border-radius: 8px;\n"
+"    padding: 8px;\n"
+"    font-weight: bold;\n"
+"    color: #8b475d;\n"
+"}"));
+        labelMessageSaison = new QLabel(tabcalendrier);
+        labelMessageSaison->setObjectName("labelMessageSaison");
+        labelMessageSaison->setGeometry(QRect(40, 430, 241, 81));
+        labelMessageSaison->setStyleSheet(QString::fromUtf8("QLabel {\n"
+"    background-color: #fff0f5;\n"
+"    border: 1px solid #ffd1dc;\n"
+"    border-radius: 5px;\n"
+"    padding: 5px;\n"
+"    color: #8b475d;\n"
+"}"));
+        labelMessageSaison->setWordWrap(true);
+        listEventsToday = new QListWidget(tabcalendrier);
+        listEventsToday->setObjectName("listEventsToday");
+        listEventsToday->setGeometry(QRect(430, 20, 411, 281));
         QIcon icon7(QIcon::fromTheme(QIcon::ThemeIcon::DocumentOpenRecent));
         tabWidget->addTab(tabcalendrier, icon7, QString());
         tabstatistique = new QWidget();
@@ -795,13 +820,13 @@ public:
         label_total->setGeometry(QRect(10, 50, 211, 31));
         label_mois = new QLabel(groupBox);
         label_mois->setObjectName("label_mois");
-        label_mois->setGeometry(QRect(20, 110, 91, 31));
+        label_mois->setGeometry(QRect(20, 160, 91, 31));
         label_annee = new QLabel(groupBox);
         label_annee->setObjectName("label_annee");
-        label_annee->setGeometry(QRect(20, 170, 121, 31));
+        label_annee->setGeometry(QRect(20, 210, 121, 31));
         labeltype = new QLabel(groupBox);
         labeltype->setObjectName("labeltype");
-        labeltype->setGeometry(QRect(30, 330, 171, 31));
+        labeltype->setGeometry(QRect(10, 290, 171, 31));
         tableWidget_types = new QTableWidget(groupBox);
         if (tableWidget_types->rowCount() < 4)
             tableWidget_types->setRowCount(4);
@@ -814,10 +839,10 @@ public:
         QTableWidgetItem *__qtablewidgetitem3 = new QTableWidgetItem();
         tableWidget_types->setVerticalHeaderItem(3, __qtablewidgetitem3);
         tableWidget_types->setObjectName("tableWidget_types");
-        tableWidget_types->setGeometry(QRect(40, 380, 381, 201));
+        tableWidget_types->setGeometry(QRect(10, 340, 381, 201));
         statButton = new QPushButton(groupBox);
         statButton->setObjectName("statButton");
-        statButton->setGeometry(QRect(540, 380, 231, 201));
+        statButton->setGeometry(QRect(460, 350, 241, 111));
         statButton->setStyleSheet(QString::fromUtf8("background-color: #f4c2c2;  /* Light pink */\n"
 "color: white;               /* White text */\n"
 "font-weight: bold;\n"
@@ -827,7 +852,10 @@ public:
 ""));
         calendarWidget_2 = new QCalendarWidget(groupBox);
         calendarWidget_2->setObjectName("calendarWidget_2");
-        calendarWidget_2->setGeometry(QRect(320, 50, 331, 231));
+        calendarWidget_2->setGeometry(QRect(420, 20, 381, 271));
+        labeltype_2 = new QLabel(groupBox);
+        labeltype_2->setObjectName("labeltype_2");
+        labeltype_2->setGeometry(QRect(10, 110, 171, 31));
 
         horizontalLayout->addWidget(groupBox);
 
@@ -939,11 +967,15 @@ public:
         label_46->setText(QCoreApplication::translate("MainWindow", "Lieu:", nullptr));
         label_71->setText(QCoreApplication::translate("MainWindow", "Type:", nullptr));
         pushButtonEditEvent->setText(QCoreApplication::translate("MainWindow", "modifier", nullptr));
+        labelAlerteSaison->setText(QCoreApplication::translate("MainWindow", "\360\237\214\236 \303\211T\303\211", nullptr));
+        labelMessageSaison->setText(QCoreApplication::translate("MainWindow", "\342\200\242 P\303\251riode : Juin \303\240 Ao\303\273t\n"
+"\342\200\242 Lieux : Plage, Jardin\n"
+"\342\200\242 Types : Festif, Romantique", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tabcalendrier), QCoreApplication::translate("MainWindow", "Calendrier", nullptr));
         groupBox->setTitle(QCoreApplication::translate("MainWindow", "STAT", nullptr));
         label_total->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Total evenements:</span></p></body></html>", nullptr));
-        label_mois->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; color:#c55d85;\">Ce mois:</span><span style=\" color:#c55d85;\"><br/></span></p></body></html>", nullptr));
-        label_annee->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; color:#c55d85;\">Cette ann\303\251e:</span></p></body></html>", nullptr));
+        label_mois->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; color:#c55d85;\">Mois:</span><span style=\" color:#c55d85;\"><br/></span></p></body></html>", nullptr));
+        label_annee->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; color:#c55d85;\">Ann\303\251e:</span></p></body></html>", nullptr));
         labeltype->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Par type:</span></p></body></html>", nullptr));
         QTableWidgetItem *___qtablewidgetitem = tableWidget_types->verticalHeaderItem(0);
         ___qtablewidgetitem->setText(QCoreApplication::translate("MainWindow", "Romantique", nullptr));
@@ -954,6 +986,7 @@ public:
         QTableWidgetItem *___qtablewidgetitem3 = tableWidget_types->verticalHeaderItem(3);
         ___qtablewidgetitem3->setText(QCoreApplication::translate("MainWindow", "Soft/Doux", nullptr));
         statButton->setText(QCoreApplication::translate("MainWindow", "stats", nullptr));
+        labeltype_2->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Par date:</span></p></body></html>", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tabstatistique), QCoreApplication::translate("MainWindow", "Statistique", nullptr));
     } // retranslateUi
 
