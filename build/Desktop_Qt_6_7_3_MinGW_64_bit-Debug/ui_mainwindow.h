@@ -842,7 +842,7 @@ public:
         tableWidget_types->setGeometry(QRect(10, 340, 381, 201));
         statButton = new QPushButton(groupBox);
         statButton->setObjectName("statButton");
-        statButton->setGeometry(QRect(460, 350, 241, 111));
+        statButton->setGeometry(QRect(480, 390, 241, 111));
         statButton->setStyleSheet(QString::fromUtf8("background-color: #f4c2c2;  /* Light pink */\n"
 "color: white;               /* White text */\n"
 "font-weight: bold;\n"
@@ -872,7 +872,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        tabWidget->setCurrentIndex(4);
+        tabWidget->setCurrentIndex(5);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -978,13 +978,13 @@ public:
         label_annee->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; color:#c55d85;\">Ann\303\251e:</span></p></body></html>", nullptr));
         labeltype->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Par type:</span></p></body></html>", nullptr));
         QTableWidgetItem *___qtablewidgetitem = tableWidget_types->verticalHeaderItem(0);
-        ___qtablewidgetitem->setText(QCoreApplication::translate("MainWindow", "Romantique", nullptr));
+        ___qtablewidgetitem->setText(QCoreApplication::translate("MainWindow", "\360\237\222\226", nullptr));
         QTableWidgetItem *___qtablewidgetitem1 = tableWidget_types->verticalHeaderItem(1);
-        ___qtablewidgetitem1->setText(QCoreApplication::translate("MainWindow", "\303\211l\303\251gant", nullptr));
+        ___qtablewidgetitem1->setText(QCoreApplication::translate("MainWindow", "\360\237\216\251", nullptr));
         QTableWidgetItem *___qtablewidgetitem2 = tableWidget_types->verticalHeaderItem(2);
-        ___qtablewidgetitem2->setText(QCoreApplication::translate("MainWindow", "Festif", nullptr));
+        ___qtablewidgetitem2->setText(QCoreApplication::translate("MainWindow", "\360\237\216\211", nullptr));
         QTableWidgetItem *___qtablewidgetitem3 = tableWidget_types->verticalHeaderItem(3);
-        ___qtablewidgetitem3->setText(QCoreApplication::translate("MainWindow", "Soft/Doux", nullptr));
+        ___qtablewidgetitem3->setText(QCoreApplication::translate("MainWindow", "\360\237\214\270", nullptr));
         statButton->setText(QCoreApplication::translate("MainWindow", "stats", nullptr));
         labeltype_2->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt;\">Par date:</span></p></body></html>", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tabstatistique), QCoreApplication::translate("MainWindow", "Statistique", nullptr));

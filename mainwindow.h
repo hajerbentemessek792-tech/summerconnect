@@ -28,6 +28,8 @@ private slots:
     // Afficher
     void on_pushButtonafficher_clicked();
     void on_lineEditchercherid_textChanged(const QString &arg1);
+    void on_pushButtonpdf_clicked();
+    void on_pushButtontri_clicked();
 
     // Modifier
     void on_pushButton_13_clicked(); // Chercher
@@ -49,6 +51,7 @@ private slots:
     void on_calendarWidget_selectionChanged();
     void on_calendarWidget_2_clicked(const QDate &date);
     void on_calendarWidget_2_selectionChanged();
+
 
 private:
     Ui::MainWindow *ui;

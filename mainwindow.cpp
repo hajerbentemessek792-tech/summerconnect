@@ -235,50 +235,113 @@ void MainWindow::clearAjouterFields()
 
 // ==================== ONGLET AFFICHER ====================
 
+// ==================== ONGLET AFFICHER - RECHERCHE AMÉLIORÉE ====================
+
 void MainWindow::on_pushButtonafficher_clicked()
 {
+    QString searchText = ui->lineEditchercherid->text().trimmed();
+
     // Si le champ de recherche est vide, afficher tous les événements
-    if (ui->lineEditchercherid->text().isEmpty()) {
+    if (searchText.isEmpty()) {
         model->setFilter("");
         model->select();
+        ui->tableView->resizeColumnsToContents();
         QMessageBox::information(this, "Affichage", "Tous les événements sont affichés");
         return;
     }
 
-    // Recherche par ID
-    bool ok;
-    int id = ui->lineEditchercherid->text().toInt(&ok);
+    // Vérifier que le texte contient seulement des chiffres pour la recherche par ID
+    bool isNumeric = true;
+    for (int i = 0; i < searchText.length(); ++i) {
+        if (!searchText[i].isDigit()) {
+            isNumeric = false;
+            break;
+        }
+    }
 
-    if (!ok) {
-        QMessageBox::warning(this, "ID invalide", "Veuillez saisir un ID valide (nombre entier)");
+    if (!isNumeric) {
+        QMessageBox::warning(this, "Recherche invalide",
+                             "Veuillez saisir uniquement des chiffres pour la recherche par ID");
         ui->lineEditchercherid->setFocus();
         ui->lineEditchercherid->selectAll();
         return;
     }
 
-    // Appliquer le filtre
-    model->setFilter(QString("ID_EVENEMENTS = %1").arg(id));
+    // Recherche par préfixe d'ID (commence par) - Syntaxe Oracle
+    QString filter = QString("TO_CHAR(ID_EVENEMENTS) LIKE '%1%'").arg(searchText + "%");
+    model->setFilter(filter);
 
-    if (!model->select()) {
-        QMessageBox::warning(this, "Recherche", "Aucun événement trouvé avec cet ID");
-        model->setFilter(""); // Réafficher tous les événements
-        model->select();
+    if (model->select()) {
+        ui->tableView->resizeColumnsToContents();
+        int rowCount = model->rowCount();
+
+        if (rowCount > 0) {
+            QMessageBox::information(this, "Recherche réussie",
+                                     QString("%1 événement(s) trouvé(s) commençant par '%2'")
+                                         .arg(rowCount)
+                                         .arg(searchText));
+        } else {
+            QMessageBox::information(this, "Aucun résultat",
+                                     QString("Aucun événement trouvé commençant par '%1'")
+                                         .arg(searchText));
+            // Réafficher tous les événements si aucun résultat
+            model->setFilter("");
+            model->select();
+            ui->tableView->resizeColumnsToContents();
+        }
     } else {
-        QMessageBox::information(this, "Recherche",
-                                 QString("%1 événement(s) trouvé(s)").arg(model->rowCount()));
+        QMessageBox::critical(this, "Erreur de recherche",
+                              "Erreur lors de la recherche: " + model->lastError().text());
     }
 }
 
 void MainWindow::on_lineEditchercherid_textChanged(const QString &arg1)
 {
     Q_UNUSED(arg1);
-    // Si le champ de recherche est vidé, réafficher tous les événements
-    if (ui->lineEditchercherid->text().isEmpty()) {
+
+    QString searchText = ui->lineEditchercherid->text().trimmed();
+
+    if (searchText.isEmpty()) {
+        // Si le champ est vide, réafficher tous les événements
         model->setFilter("");
         model->select();
+        ui->tableView->resizeColumnsToContents();
+        statusBar()->showMessage("Tous les événements sont affichés");
+        return;
+    }
+
+    // Vérifier que le texte contient seulement des chiffres pour la recherche par ID
+    bool isNumeric = true;
+    for (int i = 0; i < searchText.length(); ++i) {
+        if (!searchText[i].isDigit()) {
+            isNumeric = false;
+            break;
+        }
+    }
+
+    if (isNumeric) {
+        // RECHERCHE PAR ID (commence par) - Syntaxe Oracle
+        QString filter = QString("TO_CHAR(ID_EVENEMENTS) LIKE '%1%'").arg(searchText + "%");
+        model->setFilter(filter);
+    } else {
+        // RECHERCHE PAR NOM (contient) - Syntaxe Oracle
+        QString filter = QString("UPPER(NOM) LIKE UPPER('%%1%')").arg(searchText);
+        model->setFilter(filter);
+    }
+
+    model->select();
+    ui->tableView->resizeColumnsToContents();
+
+    // Mettre à jour le statut
+    if (!searchText.isEmpty()) {
+        int resultCount = model->rowCount();
+        statusBar()->showMessage(QString("%1 événement(s) trouvé(s) pour \"%2\"")
+                                     .arg(resultCount)
+                                     .arg(searchText));
+    } else {
+        statusBar()->showMessage("Tous les événements sont affichés");
     }
 }
-
 // ==================== ONGLET MODIFIER ====================
 
 void MainWindow::on_pushButton_13_clicked()
@@ -1044,4 +1107,272 @@ void MainWindow::afficherConseilsSaisonniers(const QDate &date)
     ui->labelMessageSaison->setText(message);
 
     qDebug() << "Conseils saisonniers pour" << date.toString("MMMM yyyy") << ":" << saison;
+}
+// ==================== TRI AMÉLIORÉ MULTI-COLONNES ====================
+
+void MainWindow::on_pushButtontri_clicked()
+{
+    // Boîte de dialogue pour choisir le critère de tri
+    QStringList criteres;
+    criteres << "ID" << "Nom" << "Date" << "Lieu" << "Type" << "Participants" << "Budget";
+
+    bool ok;
+    QString critere = QInputDialog::getItem(this, "Trier les événements",
+                                            "Choisissez le critère de tri:",
+                                            criteres, 0, false, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    // Demander l'ordre de tri
+    QStringList ordres;
+    ordres << "Croissant (A-Z, 0-9)" << "Décroissant (Z-A, 9-0)";
+
+    QString ordre = QInputDialog::getItem(this, "Ordre de tri",
+                                          "Choisissez l'ordre de tri:",
+                                          ordres, 0, false, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    bool ascending = (ordre == "Croissant (A-Z, 0-9)");
+    int columnIndex = -1;
+
+    // Déterminer la colonne et appliquer le tri
+    if (critere == "ID") {
+        columnIndex = 0;
+        model->setSort(0, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Nom") {
+        columnIndex = 1;
+        model->setSort(1, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Date") {
+        columnIndex = 2;
+        model->setSort(2, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Lieu") {
+        columnIndex = 3;
+        model->setSort(3, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Type") {
+        columnIndex = 4;
+        model->setSort(4, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Participants") {
+        columnIndex = 5;
+        model->setSort(5, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    } else if (critere == "Budget") {
+        columnIndex = 6;
+        model->setSort(6, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+    }
+
+    if (columnIndex != -1) {
+        model->select();
+        ui->tableView->resizeColumnsToContents();
+
+        // Mettre en surbrillance la colonne triée
+        ui->tableView->sortByColumn(columnIndex, ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+
+        QString ordreTexte = ascending ? "croissant" : "décroissant";
+        QMessageBox::information(this, "Tri effectué",
+                                 QString("Tri par %1 (%2) appliqué avec succès!")
+                                     .arg(critere)
+                                     .arg(ordreTexte));
+    }
+}
+
+// ==================== GÉNÉRATION PDF - VERSION SIMPLIFIÉE ET CORRECTE ====================
+// ==================== GÉNÉRATION PDF AMÉLIORÉE ====================
+
+// ==================== GÉNÉRATION PDF AMÉLIORÉE ====================
+
+void MainWindow::on_pushButtonpdf_clicked()
+{
+    qDebug() << "Génération PDF démarrée";
+
+    // Vérifier s'il y a des données à exporter
+    if (model->rowCount() == 0) {
+        QMessageBox::warning(this, "Aucune donnée",
+                             "Aucun événement à exporter en PDF.");
+        return;
+    }
+
+    // Choisir où enregistrer le PDF
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        "Enregistrer le PDF",
+        QString("Evenements_%1.pdf").arg(QDate::currentDate().toString("ddMMyyyy")),
+        "Fichiers PDF (*.pdf)"
+        );
+
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    // Création du PDF
+    QPdfWriter pdf(fileName);
+    pdf.setPageSize(QPageSize(QPageSize::A4));
+    pdf.setPageMargins(QMargins(30, 30, 30, 30));
+    pdf.setResolution(150);
+
+    QPainter painter(&pdf);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    // ===== EN-TÊTE =====
+    QFont titleFont("Arial", 18, QFont::Bold);
+    QFont subtitleFont("Arial", 12);
+    QFont headerFont("Arial", 10, QFont::Bold);
+    QFont dataFont("Arial", 9);
+    QFont footerFont("Arial", 8);
+
+    // Titre principal
+    painter.setFont(titleFont);
+    painter.setPen(QColor(139, 0, 139)); // Violet foncé
+    painter.drawText(pdf.width()/2 - 250, 50, "RAPPORT DES ÉVÉNEMENTS");
+
+    // Sous-titre
+    painter.setFont(subtitleFont);
+    painter.setPen(Qt::black);
+    painter.drawText(pdf.width()/2 - 150, 80,
+                     "Liste complète des événements planifiés");
+
+    // Informations de génération
+    painter.drawText(50, 110,
+                     QString("Généré le: %1 à %2")
+                         .arg(QDate::currentDate().toString("dd/MM/yyyy"))
+                         .arg(QTime::currentTime().toString("hh:mm")));
+
+    painter.drawText(pdf.width() - 250, 110,
+                     QString("Total: %1 événement(s)").arg(model->rowCount()));
+
+    // Ligne de séparation
+    painter.setPen(QPen(QColor(139, 0, 139), 2));
+    painter.drawLine(50, 125, pdf.width() - 50, 125);
+
+    int y = 150;
+    int lineHeight = 25;
+    int pageHeight = pdf.height() - 50;
+
+    // ===== EN-TÊTE DU TABLEAU =====
+    painter.setFont(headerFont);
+    painter.setBrush(QBrush(QColor(255, 182, 193))); // Rose clair
+    painter.setPen(QPen(Qt::black, 1));
+    painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+    // Texte de l'en-tête avec ESPACEMENT MAXIMAL
+    painter.setPen(Qt::black);
+    int x = 35;
+    painter.drawText(x, y + 18, "ID"); x += 60;
+    painter.drawText(x + 10, y + 18, "Nom"); x += 150;
+    painter.drawText(x + 15, y + 18, "Date"); x += 100;
+    painter.drawText(x + 20, y + 18, "Lieu"); x += 130;
+    painter.drawText(x + 25, y + 18, "Type"); x += 120;
+    painter.drawText(x + 20, y + 18, "Part."); x += 80;
+    painter.drawText(x + 15, y + 18, "Budget"); x += 90;
+
+    y += lineHeight;
+
+    // ===== DONNÉES DES ÉVÉNEMENTS =====
+    painter.setFont(dataFont);
+    int eventCount = 0;
+    double totalBudget = 0;
+
+    for (int i = 0; i < model->rowCount(); ++i) {
+        // Vérifier si on doit créer une nouvelle page
+        if (y > pageHeight) {
+            pdf.newPage();
+            y = 50;
+
+            // Redessiner l'en-tête sur la nouvelle page
+            painter.setFont(headerFont);
+            painter.setBrush(QBrush(QColor(255, 182, 193)));
+            painter.setPen(QPen(Qt::black, 1));
+            painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+            painter.setPen(Qt::black);
+            x = 35;
+            painter.drawText(x, y + 18, "ID"); x += 60;
+            painter.drawText(x + 10, y + 18, "Nom"); x += 150;
+            painter.drawText(x + 15, y + 18, "Date"); x += 100;
+            painter.drawText(x + 20, y + 18, "Lieu"); x += 130;
+            painter.drawText(x + 25, y + 18, "Type"); x += 120;
+            painter.drawText(x + 20, y + 18, "Part."); x += 80;
+            painter.drawText(x + 15, y + 18, "Budget"); x += 90;
+
+            y += lineHeight;
+            painter.setFont(dataFont);
+        }
+
+        // Alterner les couleurs de fond pour une meilleure lisibilité
+        if (i % 2 == 0) {
+            painter.setBrush(QBrush(QColor(255, 250, 250))); // Rose très clair
+        } else {
+            painter.setBrush(QBrush(Qt::white));
+        }
+
+        painter.setPen(QPen(Qt::black, 1));
+        painter.drawRect(30, y, pdf.width() - 60, lineHeight);
+
+        // Dessiner les données avec ESPACEMENT MAXIMAL
+        painter.setPen(QPen(Qt::black));
+        x = 35;
+
+        // ID
+        QString id = model->index(i, 0).data().toString();
+        painter.drawText(x, y + 18, id); x += 60;
+
+        // Nom (tronqué si trop long)
+        QString nom = model->index(i, 1).data().toString();
+        painter.drawText(x + 10, y + 18, nom.left(20)); x += 150;
+
+        // Date
+        QDate date = model->index(i, 2).data().toDate();
+        painter.drawText(x + 15, y + 18, date.toString("dd/MM/yyyy")); x += 100;
+
+        // Lieu (tronqué si trop long)
+        QString lieu = model->index(i, 3).data().toString();
+        painter.drawText(x + 20, y + 18, lieu.left(15)); x += 130;
+
+        // Type
+        QString type = model->index(i, 4).data().toString();
+        painter.drawText(x + 25, y + 18, type); x += 120;
+
+        // Participants
+        QString participants = model->index(i, 5).data().toString();
+        painter.drawText(x + 20, y + 18, participants); x += 80;
+
+        // Budget
+        double budget = model->index(i, 6).data().toDouble();
+        totalBudget += budget;
+        painter.drawText(x + 15, y + 18, QString::number(budget, 'f', 2) + " M"); x += 90;
+
+        y += lineHeight;
+        eventCount++;
+    }
+
+    // ===== PIED DE PAGE =====
+    painter.setPen(QPen(QColor(139, 0, 139), 2));
+    painter.drawLine(50, y + 10, pdf.width() - 50, y + 10);
+
+    painter.setFont(footerFont);
+    painter.setPen(Qt::black);
+    painter.drawText(50, y + 30,
+                     QString("Rapport généré par l'Application de Gestion d'Événements"));
+
+    // Résumé
+    painter.setFont(dataFont);
+    painter.drawText(pdf.width() - 300, y + 30,
+                     QString("Budget total: %1 M").arg(QString::number(totalBudget, 'f', 2)));
+
+    painter.end();
+
+    // Message de confirmation
+    QMessageBox::information(this, "PDF généré avec succès",
+                             QString("Le rapport PDF a été créé avec succès!\n\n"
+                                     "Fichier: %1\n"
+                                     "Événements exportés: %2\n"
+                                     "Budget total: %3 M")
+                                 .arg(fileName)
+                                 .arg(eventCount)
+                                 .arg(QString::number(totalBudget, 'f', 2)));
+
+    qDebug() << "PDF généré avec succès:" << fileName;
 }
